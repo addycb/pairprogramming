@@ -12,14 +12,19 @@ def mainmenu():
             [1]: Mood by album
             [2]: Mood by artist\n''')
     if option=="0":
-        return songmood()
+        artistname=input("Enter artist name: ")
+        songtitle=input("Enter song title: ")
+        songmood(artistname,songtitle)
+        return mainmenu()
     elif option=="1":
-        return albummood()
+        pass
+        #return mainmenu()
     elif option=="2":
-        return artistmood()
+        pass
+        #return mainmenu()
     else:
         print("Bad input.")
-        return mainmenu()
+        #return mainmenu()
 
 def songlyrics(songtitle,artistname):
     '''
@@ -38,7 +43,7 @@ def analyzesong(lyrics):
     return 0
 
 
-def songmood():
+def songmood(artistname="",songtitle=""):
     positive = open("positive-words.txt", "r")
     positivewords=positive.read()
     positive.close()
@@ -47,8 +52,6 @@ def songmood():
     negative.close()
     numposwords=0
     numnegwords=0
-    artistname=input("Enter artist name: ")
-    songtitle=input("Enter song title: ")
     lyrics=songlyrics(songtitle,artistname)
     lyrics=lyrics.split() 
     lyrics=lyrics[len(songtitle):]  #Ignore songtitle
@@ -68,7 +71,5 @@ def songmood():
             print(lyrics[index])  #Replace with adjust score according to word
         index+=1
         print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words")
-    return analyzesong(lyrics)
-
-
-mainmenu()
+    analyzesong(lyrics)
+    return [int(numnegwords),int(numposwords)]
