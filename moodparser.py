@@ -4,6 +4,7 @@ from matplotlib import artist
 
 token="JVRbucZ0zodg1YRlSoURfzrCUOYc4jhh_d-sSM74UNzVY18crYOkW568cjzkfqA2"
 genius = Genius(token)
+genius.remove_section_headers = True
 print("Welcome to Mood Finder.")
 
 def mainmenu():
@@ -25,7 +26,7 @@ def mainmenu():
     else:
         print("Bad input.")
         #return mainmenu()
-
+    
 def songlyrics(songtitle,artistname):
     '''
     Gets song lyrics using api, splits lyrics to list
@@ -54,22 +55,37 @@ def songmood(artistname="",songtitle=""):
     numnegwords=0
     lyrics=songlyrics(songtitle,artistname)
     lyrics=lyrics.split() 
-    lyrics=lyrics[len(songtitle):]  #Ignore songtitle
     index=0
+    songtitle=songtitle.split()
+    lyrics=lyrics[len(songtitle)+1:]
+    print(lyrics)
     while(index<len(lyrics)-1):
-        if "[" in lyrics[index] and "]" not in lyrics[index]:
-            index+=1
-            while lyrics[index][-1]!="]":
-                index+=1
-        elif lyrics[index][0]=="*":  #Ignore adlibs
-            pass
+        if lyrics[index][0]=="*" :  #Ignore annotation blocks
+            if lyrics[index][-1]=="*":
+                print("Skipped "+lyrics[index])
+            else:
+                while(lyrics[index][-1]!="*" and index<len(lyrics)-1):
+                    print("Skipped "+lyrics[index])
+                    index+=1
+                print("Skipped "+lyrics[index])
         else:
             if lyrics[index] in positivewords:
                 numposwords+=1
+                print("Positive: "+lyrics[index])
             elif lyrics[index] in negativewords:
                 numnegwords+=1
-            print(lyrics[index])  #Replace with adjust score according to word
-        index+=1
+                print("Negative: "+lyrics[index])
+            else:
+                print("Neutral: "+lyrics[index])
+
         print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words")
-    analyzesong(lyrics)
+        index+=1
+    print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words")
     return [int(numnegwords),int(numposwords)]
+
+"""
+def optselect(songtitle,artistname):
+if lyrics[index][0]=="*" and lyrics[index][-1]=="*":  #Ignore adlibs
+            lyrics[index]=lyrics[index][1:-1]
+            print("Fixed *"+lyrics[index]+"* to "+lyrics[index])
+"""
