@@ -1,11 +1,25 @@
 from lyricsgenius import Genius
-from matplotlib import artist
-
+import mysql.connector
+from mysql.connector import Error
 
 token="JVRbucZ0zodg1YRlSoURfzrCUOYc4jhh_d-sSM74UNzVY18crYOkW568cjzkfqA2"
 genius = Genius(token)
 genius.remove_section_headers = True
 print("Welcome to Mood Finder.")
+
+
+
+
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    passwd="rooted!!lel4",
+    database="sentimentstore"
+    )
+
+
+
+
 
 def mainmenu():
     option=input('''Select an option. 
@@ -14,25 +28,57 @@ def mainmenu():
             [2]: Mood by artist\n''')
     if option=="0":
         artistname=input("Enter artist name: ")
-        songtitle=input("Enter song title: ")
-        songmood(artistname,songtitle)
+        songname=input("Enter song name: ")
+        songmood(artistname,songname)
         return mainmenu()
     elif option=="1":
         pass
         #return mainmenu()
     elif option=="2":
         pass
-        #return mainmenu()
+        #return mainmenu()  
     else:
         print("Bad input.")
         #return mainmenu()
     
-def songlyrics(songtitle,artistname):
+def songlyrics(songname,artistname=""):
     '''
-    Gets song lyrics using api, splits lyrics to list
+    Gets song lyrics using lyricsgenius api, splits lyrics to list
     '''
-    song = genius.search_song(songtitle, artistname)  
-    return song.lyrics
+    song = genius.search_song(songname, artistname)  
+    print(song.lyrics)
+    return song.lyrics  
+
+def lyricsbysongid(id):
+    '''
+    '''
+    pass
+
+def albumsongs(albumname,artistname):
+    '''
+    Gets song names using lyricsgenius api
+    '''
+    #album=genius.search_albums(albumname+" "+artistname) Find album id
+    album=genius.album_tracks(12411) #Using album id get song tracks
+    #next get track ids
+    songlist=[]
+    for x in album["tracks"]:
+        x=x["song"]
+        songname=x["title"]
+        artistname=x["artist_names"]
+        x=x["id"]
+        lyrics=songlyrics(str(x))
+        #print("songname")
+        #print(songname)
+        #print("artistname")
+        #print(artistname)
+        #print("lyrics")
+        #print(lyrics)
+        #print(analyzesong(lyrics,songname,artistname))
+        songlist.append(songname)
+    return songlist
+            
+
 
 def albummood():
     return 0
@@ -40,11 +86,7 @@ def albummood():
 def artistmood():
     return 0
 
-def analyzesong(lyrics):
-    return 0
-
-
-def songmood(artistname="",songtitle=""):
+def analyzesong(lyrics,songname,artistname):
     positive = open("positive-words.txt", "r")
     positivewords=positive.read()
     positive.close()
@@ -53,11 +95,10 @@ def songmood(artistname="",songtitle=""):
     negative.close()
     numposwords=0
     numnegwords=0
-    lyrics=songlyrics(songtitle,artistname)
     lyrics=lyrics.split() 
     index=0
-    songtitle=songtitle.split()
-    lyrics=lyrics[len(songtitle)+1:]
+    songname=songname.split()
+    lyrics=lyrics[len(songname)+1:]
     print(lyrics)
     while(index<len(lyrics)-1):
         if lyrics[index][0]=="*" :  #Ignore annotation blocks
@@ -80,8 +121,33 @@ def songmood(artistname="",songtitle=""):
 
         print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words")
         index+=1
-    print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words")
+    print(str(numnegwords)+" negative words, "+str(numposwords)+" postive words total")
+    sentiment=numposwords/(numposwords+numnegwords)
+    print("sentiment="+str(sentiment))
+    cursor=conn.cursor()
+    cursor.execute("INSERT INTO songsentiment(songname, artistname, sentiment) VALUES (%s, %s, %s)", (songname,artistname,sentiment))
+    conn.commit()
     return [int(numnegwords),int(numposwords)]
+
+
+
+def songmoodselect(artistname,songname):
+    try:
+        query= "SELECT sentiment FROM songsentiment WHERE artistname='{0}' AND songname='{1}'".format(artistname,songname)
+        cursor=conn.cursor()
+        cursor.execute(query)
+        data=cursor.fetchone()
+        print("Query successful")
+        return data
+    except:
+        print("Query failed")
+        songmood(artistname,songname)
+
+def songmood(artistname="",songname=""):
+  
+    lyrics=songlyrics(songname,artistname)
+    analyzesong(lyrics,songname,artistname)
+   
 
 """
 def optselect(songtitle,artistname):
@@ -89,3 +155,4 @@ if lyrics[index][0]=="*" and lyrics[index][-1]=="*":  #Ignore adlibs
             lyrics[index]=lyrics[index][1:-1]
             print("Fixed *"+lyrics[index]+"* to "+lyrics[index])
 """
+print(albumsongs("Abbey Road","The Beatles"))
